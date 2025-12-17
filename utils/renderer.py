@@ -57,11 +57,17 @@ async def render_video(
         )
         
         page = await context.new_page()
-        
+
         # Garante fundo preto antes de carregar
         await page.add_style_tag(content="html, body { background-color: #000 !important; }")
-        
+
         await page.goto(abs_html_url, wait_until="load")
+
+        # Aguarda conteúdo estar visível (evita frames em branco no início)
+        await page.wait_for_selector('.frame.active', state='visible', timeout=5000)
+
+        # Pequeno delay para garantir que animações CSS iniciaram
+        await page.wait_for_timeout(50)
 
         # Grava a duração completa
         await page.wait_for_timeout(duration)
@@ -90,7 +96,7 @@ async def render_video(
 
     cmd = [
         ffmpeg_exe, "-y",
-        "-ss", "0.3",           # Corta tela branca inicial
+        "-ss", "0.05",          # Corte mínimo do início (conteúdo já carregado)
         "-r", "60",             # Força 60 FPS de entrada
         "-i", raw_video_path,
     ]

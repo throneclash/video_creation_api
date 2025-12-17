@@ -85,6 +85,15 @@
             filter: blur(0);
         }
 
+        /* Primeiro frame visível imediatamente no load */
+        .frame.instant {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+            filter: blur(0);
+            transition: none;
+        }
+
         .hidden { display: none !important; }
 
         /* === FRAME 1: O NOVO REI === */
@@ -326,7 +335,7 @@
     <div class="particles" id="particles"></div>
 
     <!-- Frame 1: O Novo Rei -->
-    <div class="frame active" id="f1">
+    <div class="frame active instant" id="f1">
         <div class="f1-badge" id="eventBadge">NOVO REINADO</div>
 
         <div class="f1-avatar-container">
@@ -548,6 +557,11 @@
 
         // Timeline Lógica Dinâmica
         function startTimeline() {
+            // Remove classe instant do primeiro frame para permitir transições futuras
+            setTimeout(() => {
+                document.getElementById('f1').classList.remove('instant');
+            }, 100);
+
             let timeline = [
                 { id: 'f1', duration: 5500, action: () => {
                     const body = document.getElementById('mainBody');
