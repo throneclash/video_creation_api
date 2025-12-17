@@ -4,8 +4,8 @@ import logging
 import asyncio
 import random
 import glob
+import json
 import requests
-import locale
 from datetime import datetime
 from typing import Dict, Any, Optional
 from jinja2 import Environment, FileSystemLoader
@@ -13,6 +13,41 @@ from .renderer import render_video
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def delete_video_file(video_path: str) -> bool:
+    """Deleta um arquivo de vídeo se existir."""
+    try:
+        if video_path and os.path.exists(video_path):
+            os.remove(video_path)
+            logger.info(f"Arquivo deletado: {video_path}")
+            return True
+    except Exception as e:
+        logger.error(f"Erro ao deletar arquivo {video_path}: {e}")
+    return False
+
+
+def save_payload_log(payload: Dict[str, Any], video_id: str, error_message: str, logs_dir: str = "./logs") -> str:
+    """Salva o payload em um arquivo .txt quando há falha de integração."""
+    try:
+        os.makedirs(logs_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"failed_payload_{video_id}_{timestamp}.txt"
+        filepath = os.path.join(logs_dir, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(f"=== FALHA DE INTEGRAÇÃO INSTAGRAM ===\n")
+            f.write(f"Data/Hora: {datetime.now().isoformat()}\n")
+            f.write(f"Video ID: {video_id}\n")
+            f.write(f"Erro: {error_message}\n")
+            f.write(f"\n=== PAYLOAD ===\n")
+            f.write(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
+
+        logger.info(f"Payload salvo em: {filepath}")
+        return filepath
+    except Exception as e:
+        logger.error(f"Erro ao salvar payload: {e}")
+        return ""
 
 # --- DICIONÁRIO DE TRADUÇÃO (labels básicos) ---
 LOCALES = {
@@ -86,7 +121,7 @@ class VideoProcessor:
             if context.get("victims"): duration += 3500         # f3: Eliminados
 
             logger.info(f"Renderizando [{region}] {duration}ms -> {output_path}")
-            
+
             asyncio.run(render_video(
                 html_content=html_content,
                 output_path=output_path,
@@ -94,13 +129,15 @@ class VideoProcessor:
                 width=1080, height=1920,
                 duration=duration
             ))
-            
+
             status = "completed"
             error = None
         except Exception as e:
             logger.error(f"Erro Fatal: {e}", exc_info=True)
             status = "failed"
             error = str(e)
+            # Deleta arquivo em caso de erro
+            delete_video_file(output_path)
 
         # Formata amount para exibição
         raw_amount = float(params.get("amount", 0))
@@ -109,21 +146,28 @@ class VideoProcessor:
         return {
             "video_id": video_id,
             "status": status,
-            "video_path": output_path,
+            "video_path": output_path if status == "completed" else None,
             "region": region,
             "king_name": params.get("king_name"),
-            "amount": formatted_amount
+            "amount": formatted_amount,
+            "persist_file": params.get("persist_file", False),
+            "original_params": params
         }
 
 class InstagramPublisher:
     def __init__(self):
         # Não iniciamos credenciais fixas aqui, decidimos no momento do envio
-        pass
+        self.last_error = None
 
-    def publish_video(self, video_data: Dict[str, Any]) -> bool:
+    def publish_video(self, video_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Publica vídeo no Instagram.
+        Retorna dict com: success (bool), error (str ou None), published_id (str ou None)
+        """
         path = video_data.get("video_path")
         region = video_data.get("region", "BR")
-        
+        self.last_error = None
+
         # Seleciona Credenciais baseadas na região
         if region == "GLOBAL":
             access_token = settings.INSTAGRAM_ACCESS_TOKEN_GLOBAL
@@ -131,25 +175,30 @@ class InstagramPublisher:
         else:
             access_token = settings.INSTAGRAM_ACCESS_TOKEN_BR
             account_id = settings.INSTAGRAM_ACCOUNT_ID_BR
-            
-        if not access_token or not account_id:
-            logger.error(f"❌ Credenciais não encontradas para região {region}")
-            return False
 
-        if not path or not os.path.exists(path): return False
-        
+        if not access_token or not account_id:
+            self.last_error = f"Credenciais não encontradas para região {region}"
+            logger.error(f"❌ {self.last_error}")
+            return {"success": False, "error": self.last_error, "published_id": None}
+
+        if not path or not os.path.exists(path):
+            self.last_error = f"Arquivo de vídeo não encontrado: {path}"
+            logger.error(f"❌ {self.last_error}")
+            return {"success": False, "error": self.last_error, "published_id": None}
+
         base_api = f"https://graph.facebook.com/v18.0/{account_id}"
         video_api = f"https://graph-video.facebook.com/v18.0/{account_id}"
-        
+
         try:
             # 1. Init
             logger.info(f"Iniciando upload para Instagram [{region}]...")
-            res = requests.post(f"{video_api}/media?upload_type=resumable&media_type=REELS", 
+            res = requests.post(f"{video_api}/media?upload_type=resumable&media_type=REELS",
                               headers={"Authorization": f"Bearer {access_token}"})
-            if res.status_code != 200: 
-                logger.error(f"Erro Init: {res.text}")
-                return False
-            
+            if res.status_code != 200:
+                self.last_error = f"Erro Init: {res.text}"
+                logger.error(self.last_error)
+                return {"success": False, "error": self.last_error, "published_id": None}
+
             uri = res.json().get("uri")
             creation_id = res.json().get("id")
 
@@ -163,7 +212,7 @@ class InstagramPublisher:
             # 3. Publish
             import time
             time.sleep(15)
-            
+
             caption = f"👑 {video_data.get('king_name')} - {video_data.get('amount')}"
             if region == "GLOBAL":
                 caption += "\n\n#throneclash #crypto #game #winner"
@@ -171,18 +220,21 @@ class InstagramPublisher:
                 caption += "\n\n#throneclash #ganhador #leilao #pix"
 
             pub = requests.post(f"{base_api}/media_publish", params={
-                "creation_id": creation_id, 
-                "caption": caption, 
+                "creation_id": creation_id,
+                "caption": caption,
                 "access_token": access_token
             })
-            
+
             if pub.status_code == 200:
-                logger.info(f"✅ Publicado no IG {region}! ID: {pub.json().get('id')}")
-                return True
+                published_id = pub.json().get('id')
+                logger.info(f"✅ Publicado no IG {region}! ID: {published_id}")
+                return {"success": True, "error": None, "published_id": published_id}
             else:
-                logger.error(f"❌ Erro Publish: {pub.text}")
-                return False
+                self.last_error = f"Erro Publish: {pub.text}"
+                logger.error(f"❌ {self.last_error}")
+                return {"success": False, "error": self.last_error, "published_id": None}
 
         except Exception as e:
+            self.last_error = str(e)
             logger.error(f"Erro Exception: {e}")
-            return False
+            return {"success": False, "error": self.last_error, "published_id": None}

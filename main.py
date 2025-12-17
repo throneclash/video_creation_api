@@ -18,7 +18,7 @@ from app.models import (
     HealthCheckResponse
 )
 from app.job_queue import job_queue, Job, JobStatus
-from utils.video_processor import VideoProcessor, InstagramPublisher
+from utils.video_processor import VideoProcessor, InstagramPublisher, delete_video_file, save_payload_log
 
 # Configure logging
 logging.basicConfig(
@@ -63,48 +63,113 @@ async def health_check():
         timestamp=datetime.utcnow().isoformat()
     )
 
-def process_video_background(job_id: str, template: str, params: dict, publish: bool = True) -> None:
+def process_video_background(job_id: str, template: str, params: dict) -> None:
+    """
+    Processa vídeo em background com controle de flags:
+    - persist_file: Se False (padrão), deleta o arquivo após processamento
+    - publish_instagram: Se True (padrão), tenta publicar no Instagram
+    """
+    video_path = None
+    persist_file = params.get("persist_file", False)
+    publish_instagram = params.get("publish_instagram", True)
+
     try:
         logger.info(f"Starting job {job_id}")
+        logger.info(f"Flags: persist_file={persist_file}, publish_instagram={publish_instagram}")
         job_queue.update_job_status(job_id, JobStatus.PROCESSING)
-        
+
+        # 1. Renderiza o vídeo
         video_data = video_processor.process_video(params)
-        
+        video_path = video_data.get("video_path")
+
+        # Se falhou na renderização, o arquivo já foi deletado pelo processor
+        if video_data.get("status") == "failed":
+            job_queue.update_job_status(job_id, JobStatus.FAILED, error="Erro na renderização")
+            return
+
         job_queue.update_job_status(job_id, JobStatus.COMPLETED, result=video_data)
-        
-        if publish:
+
+        # 2. Publica no Instagram (se flag habilitada)
+        if publish_instagram:
             logger.info(f"Publishing to Instagram ({video_data.get('region', 'BR')})")
-            if instagram_publisher.publish_video(video_data):
-                job_queue.update_job_status(job_id, JobStatus.PUBLISHED)
+            publish_result = instagram_publisher.publish_video(video_data)
+
+            if publish_result.get("success"):
+                job_queue.update_job_status(job_id, JobStatus.PUBLISHED, result={
+                    **video_data,
+                    "instagram_id": publish_result.get("published_id")
+                })
+                # Sucesso no Instagram: deleta arquivo (a menos que persist_file=True)
+                if not persist_file:
+                    delete_video_file(video_path)
+                    logger.info(f"Vídeo publicado e arquivo deletado: {video_path}")
             else:
+                # Falha no Instagram: salva payload e deleta arquivo
                 logger.warning(f"Failed to publish video {job_id}")
+                error_msg = publish_result.get("error", "Erro desconhecido")
+
+                # Salva payload para debug
+                save_payload_log(
+                    payload=video_data.get("original_params", params),
+                    video_id=video_data.get("video_id", job_id),
+                    error_message=error_msg
+                )
+
+                # Deleta arquivo em caso de falha de integração
+                delete_video_file(video_path)
+                logger.info(f"Falha no Instagram: payload salvo e arquivo deletado")
+
+                job_queue.update_job_status(job_id, JobStatus.FAILED, error=f"Instagram: {error_msg}")
+        else:
+            # Não publica no Instagram
+            logger.info(f"Publicação no Instagram desabilitada para job {job_id}")
+            # Se não vai publicar e persist_file=False, deleta
+            if not persist_file:
+                delete_video_file(video_path)
+                logger.info(f"Arquivo deletado (persist_file=False): {video_path}")
+
     except Exception as e:
         logger.error(f"Error job {job_id}: {e}", exc_info=True)
         job_queue.update_job_status(job_id, JobStatus.FAILED, error=str(e))
+        # Em caso de exceção, deleta o arquivo se existir
+        if video_path:
+            delete_video_file(video_path)
 
 @app.post("/api/v1/videos/create", response_model=VideoCreationResponse, status_code=202, tags=["Videos"])
-async def create_video(request: VideoCreationRequest, background_tasks: BackgroundTasks, publish: bool = True):
-    """Generic endpoint. Only accepts 'DYNAMIC' or 'E'."""
+async def create_video(request: VideoCreationRequest, background_tasks: BackgroundTasks):
+    """
+    Generic endpoint. Only accepts 'DYNAMIC' or 'E'.
+
+    Flags de controle (no payload):
+    - persist_file: Se True, mantém o arquivo após processamento (padrão: False)
+    - publish_instagram: Se True, publica no Instagram (padrão: True)
+    """
     try:
         if request.template.upper() not in ["DYNAMIC", "E"]:
             raise HTTPException(status_code=400, detail="Only 'DYNAMIC' template supported.")
-        
+
         job_id = str(uuid.uuid4())
         job = Job(job_id, request.template, request.params)
         job_queue.add_job(job)
-        
-        background_tasks.add_task(process_video_background, job_id, request.template, request.params, publish)
-        
+
+        background_tasks.add_task(process_video_background, job_id, request.template, request.params)
+
         return VideoCreationResponse(status="ok", message="Job accepted", video_id=job_id)
     except Exception as e:
         logger.error(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/videos/template-dynamic", response_model=VideoCreationResponse, status_code=202, tags=["Videos"])
-async def create_video_template_dynamic(params: TemplateDynamicParams, background_tasks: BackgroundTasks, publish: bool = True):
-    """Create video with Template Dynamic (Ultimate)."""
+async def create_video_template_dynamic(params: TemplateDynamicParams, background_tasks: BackgroundTasks):
+    """
+    Create video with Template Dynamic (Ultimate).
+
+    Flags de controle:
+    - persist_file: Se True, mantém o arquivo após processamento (padrão: False)
+    - publish_instagram: Se True, publica no Instagram (padrão: True)
+    """
     request = VideoCreationRequest(template="DYNAMIC", params=params.model_dump())
-    return await create_video(request, background_tasks, publish)
+    return await create_video(request, background_tasks)
 
 @app.get("/api/v1/videos/{video_id}", tags=["Videos"])
 async def get_video_status(video_id: str):

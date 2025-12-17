@@ -21,6 +21,10 @@ class TemplateDynamicParams(BaseModel):
     victims: Optional[List[Victim]] = []
     cta: str = "QUEM VAI DESAFIAR?"
 
+    # Flags de controle
+    persist_file: bool = False  # Se True, mantém o arquivo após processamento
+    publish_instagram: bool = True  # Se True, publica no Instagram
+
 class VideoCreationRequest(BaseModel):
     template: str
     params: Dict[str, Any]
