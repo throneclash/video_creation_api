@@ -119,6 +119,3 @@ async def list_videos(status_filter: Optional[str] = None, limit: int = 100):
         all_jobs = {k: v for k, v in all_jobs.items() if v.get("status") == status_filter}
     return {"total": len(all_jobs), "jobs": list(all_jobs.values())[:limit]}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host=settings.API_HOST, port=settings.API_PORT, reload=settings.DEBUG)
