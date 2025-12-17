@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: video-creation-api
+    ports:
+      - "8000:8000"
+    environment:
+      - INSTAGRAM_ACCESS_TOKEN=${INSTAGRAM_ACCESS_TOKEN}
+      - INSTAGRAM_ACCOUNT_ID=${INSTAGRAM_ACCOUNT_ID}
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DEBUG=False
+      - VIDEO_OUTPUT_DIR=/app/output
+      - MAX_WORKERS=4
+    volumes:
+      - ./output:/app/output
+      - ./logs:/app/logs
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

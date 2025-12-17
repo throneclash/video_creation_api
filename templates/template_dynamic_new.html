@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920">
+    <title>ThroneClash Official</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --accent: #FF003C;
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --bg-dark: #050505;
+        }
+
+        body {
+            width: 1080px;
+            height: 1920px;
+            background: var(--bg-dark);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            position: relative;
+            color: white;
+        }
+
+        /* === CORE EFFECTS === */
+        .shake-screen { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-12px, 0, 0) rotate(-1deg); }
+            20%, 80% { transform: translate3d(24px, 0, 0) rotate(1deg); }
+            30%, 50%, 70% { transform: translate3d(-24px, 0, 0); }
+            40%, 60% { transform: translate3d(24px, 0, 0); }
+        }
+
+        .bg-grid {
+            position: absolute;
+            inset: -50%;
+            width: 200%;
+            height: 200%;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 120px 120px;
+            transform: perspective(900px) rotateX(40deg);
+            animation: gridMove 6s linear infinite;
+            z-index: 1;
+            filter: drop-shadow(0 0 15px var(--accent));
+        }
+        @keyframes gridMove { to { transform: perspective(900px) rotateX(40deg) translateY(120px); } }
+
+        .vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, transparent 40%, #000 120%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .particles { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+        .particle { position: absolute; border-radius: 50%; box-shadow: 0 0 30px var(--accent); }
+
+        /* === FRAMES SYSTEM === */
+        .frame {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            z-index: 10;
+            padding: 72px;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            transform: scale(1.3);
+            filter: blur(15px);
+        }
+
+        .frame.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+            filter: blur(0);
+        }
+
+        .hidden { display: none !important; }
+
+        /* === FRAME 1: O NOVO REI === */
+        .f1-badge {
+            background: var(--accent);
+            padding: 18px 48px;
+            border-radius: 12px;
+            font-size: 33px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 75px;
+            box-shadow: 0 0 120px var(--accent);
+            text-shadow: 0 3px 6px rgba(0,0,0,0.5);
+            animation: pulseBadge 1.5s infinite;
+        }
+        @keyframes pulseBadge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        .f1-avatar-container { position: relative; margin-bottom: 60px; }
+        .f1-crown {
+            position: absolute;
+            top: -150px; left: 50%;
+            transform: translateX(-50%) rotate(-5deg);
+            font-size: 180px;
+            filter: drop-shadow(0 0 75px rgba(255,215,0,0.8));
+            animation: float 3s ease-in-out infinite;
+        }
+        .f1-avatar {
+            width: 390px; height: 390px;
+            border-radius: 50%;
+            border: 12px solid var(--gold);
+            object-fit: cover;
+            box-shadow: 0 0 240px rgba(255,215,0,0.4);
+            animation: pulseAvatar 2s infinite ease-in-out;
+        }
+        @keyframes pulseAvatar { 0%, 100% { transform: scale(1); box-shadow: 0 0 180px rgba(255,215,0,0.2); } 50% { transform: scale(1.03); box-shadow: 0 0 270px rgba(255,215,0,0.6); } }
+
+        .f1-name {
+            font-family: 'Rajdhani';
+            font-size: 108px;
+            font-weight: 800;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 15px;
+        }
+
+        .f1-value {
+            font-family: 'Rajdhani';
+            font-size: 174px;
+            font-weight: 700;
+            color: transparent;
+            -webkit-text-stroke: 3px var(--accent);
+            text-shadow: 0 0 90px var(--accent);
+            margin-bottom: 60px;
+            letter-spacing: -3px;
+        }
+
+        .f1-quote-box {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 3px solid rgba(255,255,255,0.1);
+            border-left: 9px solid var(--gold);
+            padding: 45px;
+            border-radius: 36px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            opacity: 1;
+            transform: none;
+        }
+
+        .f1-quote {
+            font-size: 42px;
+            font-style: italic;
+            color: rgba(255,255,255,0.9);
+            line-height: 1.4;
+        }
+
+        /* === FRAME 2: HIERARCHY SHIFT (#1 -> #2) === */
+        .shift-container { width: 100%; text-align: center; }
+        .shift-title {
+            font-size: 30px; text-transform: uppercase; letter-spacing: 9px; color: #888;
+            margin-bottom: 90px;
+        }
+
+        .shift-card {
+            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+            border: 3px solid #333;
+            border-radius: 48px;
+            padding: 60px;
+            display: flex;
+            align-items: center;
+            gap: 60px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .shift-arrow {
+            font-size: 72px;
+            color: var(--silver);
+            margin: 30px 0;
+            animation: bounceArrow 0.6s infinite;
+        }
+        @keyframes bounceArrow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(24px)} }
+
+        .rank-badge {
+            background: #333;
+            width: 120px; height: 120px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 24px;
+            font-family: 'Rajdhani';
+            font-weight: 800;
+            font-size: 60px;
+        }
+
+        .old-rank { background: rgba(255,215,0,0.1); color: var(--gold); border: 3px solid var(--gold); }
+        .new-rank { background: rgba(192,192,192,0.1); color: var(--silver); border: 3px solid var(--silver); }
+
+        .shift-avatar { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; }
+        .shift-name { font-size: 42px; font-weight: 700; }
+        .shift-label { font-size: 30px; text-transform: uppercase; }
+
+        /* === FRAME 3: ELIMINACAO === */
+        .elim-container { text-align: center; width: 100%; position: relative; }
+
+        .elim-skull {
+            font-size: 180px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 0 90px var(--accent));
+            animation: shakeSkull 2s infinite;
+        }
+        @keyframes shakeSkull { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
+
+        .elim-card {
+            background: #111;
+            border: 3px solid var(--accent);
+            padding: 45px;
+            border-radius: 36px;
+            display: flex;
+            align-items: center;
+            gap: 45px;
+            transform: rotate(-5deg);
+            margin-bottom: 90px;
+            opacity: 0.8;
+            filter: grayscale(1);
+            box-shadow: 0 0 60px rgba(255,0,0,0.2);
+        }
+
+        .elim-badge {
+            background: var(--accent);
+            color: white;
+            font-size: 27px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-top: 15px;
+            display: inline-block;
+        }
+
+        .elim-message {
+            font-family: 'Rajdhani';
+            font-size: 72px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .elim-message span { color: var(--accent); font-weight: 800; text-shadow: 0 0 30px var(--accent); }
+
+        .elim-avatar { width: 180px; height: 180px; border-radius: 50%; object-fit: cover; }
+        .elim-name { font-size: 48px; font-weight: 700; color: #888; text-decoration: line-through; }
+        .elim-footer { font-size: 36px; color: #555; letter-spacing: 3px; margin-top: 30px; }
+
+        /* === FRAME 4: CTA === */
+        .cta-glitch {
+            font-family: 'Rajdhani';
+            font-size: 144px;
+            font-weight: 900;
+            line-height: 0.9;
+            margin-bottom: 120px;
+            position: relative;
+            text-align: center;
+            filter: drop-shadow(0 0 30px white);
+        }
+        .cta-glitch::before, .cta-glitch::after {
+            content: attr(data-text);
+            position: absolute; left: 0; top: 0; width: 100%; opacity: 0.8;
+        }
+        .frame.active .cta-glitch::before {
+            color: #0ff; animation: glitch 2.5s infinite linear alternate-reverse;
+        }
+        .frame.active .cta-glitch::after {
+            color: #f0f; animation: glitch 1.5s infinite linear alternate-reverse;
+        }
+
+        .cta-btn {
+            background: white;
+            color: black;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 60px 120px;
+            border-radius: 150px;
+            font-size: 48px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 180px rgba(255,255,255,0.4);
+            transform: scale(0);
+        }
+        .frame.active .cta-btn { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.2s; }
+
+        .cta-brand {
+            margin-top: 75px;
+            font-family: 'Rajdhani';
+            letter-spacing: 6px;
+            color: #666;
+            font-size: 36px;
+        }
+
+        /* Animations */
+        @keyframes float { 0%,100% { transform:translateX(-50%) rotate(-5deg) translateY(0); } 50% { transform:translateX(-50%) rotate(-5deg) translateY(-45px); } }
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes glitch {
+            0% { clip-path: inset(20% 0 80% 0); transform: translate(-12px,0); }
+            20% { clip-path: inset(60% 0 10% 0); transform: translate(12px,0); }
+            40% { clip-path: inset(10% 0 50% 0); transform: translate(-12px,0); }
+            60% { clip-path: inset(80% 0 5% 0); transform: translate(12px,0); }
+            80% { clip-path: inset(30% 0 40% 0); transform: translate(-12px,0); }
+            100% { clip-path: inset(50% 0 20% 0); transform: translate(12px,0); }
+        }
+
+    </style>
+</head>
+<body id="mainBody">
+    <div class="vignette"></div>
+    <div class="bg-grid"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- Frame 1: O Novo Rei -->
+    <div class="frame active" id="f1">
+        <div class="f1-badge" id="eventBadge">NOVO REINADO</div>
+
+        <div class="f1-avatar-container">
+            <div class="f1-crown">👑</div>
+            <img src="{{ king_photo_url }}" class="f1-avatar" id="kingAvatar">
+        </div>
+
+        <div class="f1-name" id="kingName">{{ king_name }}</div>
+        <div class="f1-value" id="moneyCounter">{{ labels.currency_symbol }} 0</div>
+
+        <div class="f1-quote-box {{ 'hidden' if not message else '' }}">
+            <p class="f1-quote" id="kingQuote">"{{ message }}"</p>
+        </div>
+    </div>
+
+    <!-- Frame 2: Queda de Poder (Ex-Rei) -->
+    <div class="frame {{ 'hidden' if not dethroned_name else '' }}" id="f2">
+        <div class="shift-container">
+            <div class="shift-title" id="shiftTitle">📉 Queda de Poder</div>
+
+            <div class="shift-card" style="opacity: 0.6;">
+                <div class="rank-badge old-rank">#1</div>
+                <img src="{{ dethroned_photo_url }}" class="shift-avatar" style="filter:grayscale(0.5);">
+                <div style="text-align:left;">
+                    <div class="shift-name">{{ dethroned_name }}</div>
+                    <div class="shift-label" style="color:#666;" id="labelSupremo">SUPREMO</div>
+                </div>
+            </div>
+
+            <div class="shift-arrow">⬇</div>
+
+            <div class="shift-card" style="border-color: var(--silver);">
+                <div class="rank-badge new-rank">#2</div>
+                <img src="{{ dethroned_photo_url }}" class="shift-avatar">
+                <div style="text-align:left;">
+                    <div class="shift-name">{{ dethroned_name }}</div>
+                    <div class="shift-label" style="color:var(--silver);" id="labelSilver">TRONO PRATA</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frame 3: Eliminacao -->
+    <div class="frame {{ 'hidden' if not victims else '' }}" id="f3">
+        <div class="elim-container">
+            <div class="elim-skull">💀</div>
+            <div class="elim-message" style="margin-bottom:60px;" id="elimMessage">EXPULSO DO <span>#{{ victims[0].old_position if victims else '9' }}</span></div>
+
+            <div class="elim-card">
+                <img src="{{ victims[0].photo_url if victims else '' }}" class="elim-avatar">
+                <div style="text-align:left;">
+                    <div class="elim-name">{{ victims[0].name if victims else '' }}</div>
+                    <div class="elim-badge" id="elimBadge">ELIMINADO</div>
+                </div>
+            </div>
+
+            <div class="elim-footer" id="elimFooter">CAIU PARA O CEMITÉRIO</div>
+        </div>
+    </div>
+
+    <!-- Frame 4: CTA -->
+    <div class="frame" id="f4">
+        <div class="cta-glitch" id="ctaHook" data-text="QUEM OUSA?">QUEM OUSA?</div>
+        <div class="cta-btn" id="ctaBtn">TOMAR O TRONO</div>
+        <div class="cta-brand">{{ labels.brand }}</div>
+    </div>
+
+    <script>
+        // Dados injetados pelo backend
+        const CONFIG = {
+            region: "{{ region | default('BR') }}",
+            amount: {{ amount | default(0) }},
+            currency: "{{ labels.currency_symbol }}",
+            has_dethroned: {{ 'true' if dethroned_name else 'false' }},
+            has_victims: {{ 'true' if victims else 'false' }},
+            has_message: {{ 'true' if message else 'false' }}
+        };
+
+        // CONFIGURAÇÕES RANDÔMICAS POR IDIOMA
+        const VARIATIONS = {
+            BR: {
+                colors: ['#FF003C', '#BC13FE', '#00FF88', '#FF6B00'],
+                events: ['NOVO REINADO', 'GOLPE DE ESTADO', 'TRONO TOMADO', 'REVOLUÇÃO'],
+                hooks: ['QUEM OUSA?', 'VOCÊ TEM CORAGEM?', 'ATAQUE AGORA', 'O TRONO TE CHAMA'],
+                btns: ['TOMAR O TRONO', 'PROVE SEU VALOR', 'DERRUBAR O REI', 'ENTRE NA GUERRA'],
+                quotes: [
+                    '"O trono não se pede, se conquista."',
+                    '"Ninguém fica no topo para sempre... exceto eu."',
+                    '"Dinheiro compra poder. Eu tenho os dois."',
+                    '"A vista daqui de cima é perfeita."'
+                ],
+                shiftTitle: '📉 Queda de Poder',
+                labelSupremo: 'SUPREMO',
+                labelSilver: 'TRONO PRATA',
+                elimMessage: 'EXPULSO DO',
+                elimBadge: 'ELIMINADO',
+                elimFooter: 'CAIU PARA O CEMITÉRIO'
+            },
+            GLOBAL: {
+                colors: ['#FF003C', '#BC13FE', '#00FF88', '#FF6B00'],
+                events: ['NEW REIGN', 'COUP D\'ÉTAT', 'THRONE TAKEN', 'REVOLUTION'],
+                hooks: ['WHO DARES?', 'DO YOU HAVE COURAGE?', 'ATTACK NOW', 'THE THRONE CALLS'],
+                btns: ['TAKE THE THRONE', 'PROVE YOUR WORTH', 'DETHRONE THE KING', 'JOIN THE WAR'],
+                quotes: [
+                    '"The throne is not asked for, it is conquered."',
+                    '"No one stays on top forever... except me."',
+                    '"Money buys power. I have both."',
+                    '"The view from up here is perfect."'
+                ],
+                shiftTitle: '📉 Power Fall',
+                labelSupremo: 'SUPREME',
+                labelSilver: 'SILVER THRONE',
+                elimMessage: 'EXPELLED FROM',
+                elimBadge: 'ELIMINATED',
+                elimFooter: 'FELL TO THE GRAVEYARD'
+            }
+        };
+
+        // Função principal de randomização
+        function randomizeContent() {
+            const lang = VARIATIONS[CONFIG.region] || VARIATIONS.BR;
+
+            const color = lang.colors[Math.floor(Math.random() * lang.colors.length)];
+            const event = lang.events[Math.floor(Math.random() * lang.events.length)];
+            const hook = lang.hooks[Math.floor(Math.random() * lang.hooks.length)];
+            const btn = lang.btns[Math.floor(Math.random() * lang.btns.length)];
+
+            // Aplica cor accent
+            document.documentElement.style.setProperty('--accent', color);
+
+            // Atualiza Textos
+            document.getElementById('eventBadge').textContent = event;
+            document.getElementById('ctaHook').textContent = hook;
+            document.getElementById('ctaHook').setAttribute('data-text', hook);
+            document.getElementById('ctaBtn').textContent = btn;
+
+            // Se não tem mensagem customizada, usa uma aleatória
+            if (!CONFIG.has_message) {
+                const quote = lang.quotes[Math.floor(Math.random() * lang.quotes.length)];
+                const quoteEl = document.getElementById('kingQuote');
+                if (quoteEl) quoteEl.textContent = quote;
+            }
+
+            // Labels por idioma
+            const shiftTitle = document.getElementById('shiftTitle');
+            if (shiftTitle) shiftTitle.innerHTML = lang.shiftTitle;
+
+            const labelSupremo = document.getElementById('labelSupremo');
+            if (labelSupremo) labelSupremo.textContent = lang.labelSupremo;
+
+            const labelSilver = document.getElementById('labelSilver');
+            if (labelSilver) labelSilver.textContent = lang.labelSilver;
+
+            const elimMessage = document.getElementById('elimMessage');
+            if (elimMessage) {
+                const position = elimMessage.querySelector('span');
+                if (position) {
+                    elimMessage.innerHTML = lang.elimMessage + ' <span>' + position.textContent + '</span>';
+                }
+            }
+
+            const elimBadge = document.getElementById('elimBadge');
+            if (elimBadge) elimBadge.textContent = lang.elimBadge;
+
+            const elimFooter = document.getElementById('elimFooter');
+            if (elimFooter) elimFooter.textContent = lang.elimFooter;
+        }
+
+        // Animação de números com formatação por região
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                let val = Math.floor(progress * (end - start) + start);
+
+                // Formatação por região
+                let formatted;
+                if (CONFIG.region === 'BR') {
+                    formatted = val.toLocaleString('pt-BR');
+                } else {
+                    formatted = val.toLocaleString('en-US');
+                }
+
+                obj.innerHTML = CONFIG.currency + " " + formatted;
+
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    if (CONFIG.region === 'BR') {
+                        obj.innerHTML = CONFIG.currency + " " + end.toLocaleString('pt-BR');
+                    } else {
+                        obj.innerHTML = CONFIG.currency + " " + end.toLocaleString('en-US');
+                    }
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Partículas Background
+        function createParticle() {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 18 + 6;
+            p.style.width = size + 'px';
+            p.style.height = size + 'px';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.top = '100%';
+            p.style.opacity = Math.random();
+            p.style.background = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+
+            p.style.transition = `top ${Math.random() * 1.5 + 1}s linear`;
+            document.getElementById('particles').appendChild(p);
+
+            requestAnimationFrame(() => { p.style.top = '-10%'; });
+            setTimeout(() => p.remove(), 3000);
+        }
+        setInterval(createParticle, 50);
+
+        // Timeline Lógica Dinâmica
+        function startTimeline() {
+            let timeline = [
+                { id: 'f1', duration: 5500, action: () => {
+                    const body = document.getElementById('mainBody');
+                    body.classList.remove('shake-screen');
+                    void body.offsetWidth;
+                    body.classList.add('shake-screen');
+                    animateValue(document.getElementById("moneyCounter"), 0, CONFIG.amount, 2000);
+                }}
+            ];
+
+            if (CONFIG.has_dethroned) {
+                timeline.push({ id: 'f2', duration: 3500 });
+            }
+
+            if (CONFIG.has_victims) {
+                timeline.push({ id: 'f3', duration: 3500 });
+            }
+
+            timeline.push({ id: 'f4', duration: 4000 });
+
+            let elapsed = 0;
+            timeline.forEach((step) => {
+                setTimeout(() => {
+                    document.querySelectorAll('.frame').forEach(f => f.classList.remove('active'));
+                    document.getElementById(step.id).classList.add('active');
+                    if(step.action) step.action();
+                }, elapsed);
+                elapsed += step.duration;
+            });
+        }
+
+        window.onload = () => {
+            randomizeContent();
+            startTimeline();
+        };
+    </script>
+</body>
+</html>

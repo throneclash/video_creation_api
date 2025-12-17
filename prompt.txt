@@ -1,0 +1,582 @@
+perceba que temos apenas um template unico e isso esta correto. perceba também que ele deve usar musicas
+randomicamentes do path assets e as cores dele também são dinimicas. e isso tudo é correto da forma que esta. porem
+eu queria que o template divesse o mesmo dinamismo do template abaixo em termos de frames apenas.
+importante notar que temos multiidiomas e isso deve ser mantido (global e br)
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920">
+    <title>ThroneClash - Ultimate Template</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #FFD700;
+            --gold-dim: #B8860B;
+            --red: #FF003C;
+            --cyan: #00D4FF;
+            --bg: #050505;
+            --surface: rgba(255,255,255,0.05);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            width: 1080px;
+            height: 1920px;
+            background: var(--bg);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* === BACKGROUND EFFECTS === */
+        .bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,215,0,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,215,0,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(60px); }
+        }
+        
+        .bg-glow {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            filter: blur(150px);
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        
+        .glow-1 {
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gold);
+            animation: pulse-glow 4s ease-in-out infinite;
+        }
+        
+        .glow-2 {
+            bottom: 200px;
+            right: -200px;
+            background: var(--red);
+            animation: pulse-glow 4s ease-in-out infinite 2s;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+        }
+
+        /* === FRAMES === */
+        .frame {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            z-index: 10;
+        }
+        
+        .frame.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* === FRAME 1: HOOK === */
+        .f1-container {
+            text-align: center;
+            padding: 0 60px;
+        }
+        
+        .f1-alert {
+            display: inline-flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--red);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 100px;
+            font-weight: 700;
+            font-size: 28px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 60px;
+            box-shadow: 0 0 60px var(--red);
+            transform: scale(0);
+        }
+        
+        .frame.active .f1-alert {
+            animation: stomp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        .f1-hook {
+            font-size: 88px;
+            font-weight: 900;
+            line-height: 1;
+            text-transform: uppercase;
+            color: white;
+            margin-bottom: 50px;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        
+        .frame.active .f1-hook {
+            animation: slideUp 0.6s ease forwards 0.3s;
+        }
+        
+        .f1-value {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 140px;
+            font-weight: 700;
+            color: var(--gold);
+            text-shadow: 0 0 80px var(--gold);
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        
+        .frame.active .f1-value {
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.5s;
+        }
+
+        /* === FRAME 2: BUILDUP === */
+        .f2-crown-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .f2-ring {
+            position: absolute;
+            border: 4px solid transparent;
+            border-radius: 50%;
+        }
+        
+        .f2-ring-1 {
+            width: 100%;
+            height: 100%;
+            border-top-color: var(--gold);
+            border-right-color: var(--gold);
+            animation: spin 2s linear infinite;
+        }
+        
+        .f2-ring-2 {
+            width: 80%;
+            height: 80%;
+            border-bottom-color: var(--cyan);
+            border-left-color: var(--cyan);
+            animation: spin 3s linear infinite reverse;
+        }
+        
+        .f2-ring-3 {
+            width: 60%;
+            height: 60%;
+            border-top-color: var(--red);
+            animation: spin 1.5s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .f2-crown {
+            font-size: 160px;
+            filter: drop-shadow(0 0 40px var(--gold));
+            animation: float 2s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .f2-text {
+            margin-top: 80px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 52px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+        }
+        
+        .f2-dots {
+            display: inline-block;
+            animation: dots 1.5s steps(4) infinite;
+        }
+        
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+        }
+
+        /* === FRAME 3: REVEAL === */
+        .f3-card {
+            width: 85%;
+            background: linear-gradient(180deg, rgba(30,30,30,0.95) 0%, rgba(15,15,15,0.98) 100%);
+            border: 2px solid var(--gold);
+            border-radius: 40px;
+            padding: 60px 40px;
+            text-align: center;
+            box-shadow: 
+                0 0 100px rgba(255,215,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            transform: translateY(100px) scale(0.9);
+            opacity: 0;
+        }
+        
+        .frame.active .f3-card {
+            animation: revealCard 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        @keyframes revealCard {
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        
+        .f3-crown-badge {
+            font-size: 80px;
+            margin-bottom: 30px;
+            animation: bounce 1s ease infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .f3-label {
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            color: var(--gold);
+            margin-bottom: 20px;
+        }
+        
+        .f3-avatar {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            border: 6px solid var(--gold);
+            object-fit: cover;
+            margin: 30px auto;
+            box-shadow: 0 0 60px rgba(255,215,0,0.4);
+        }
+        
+        .f3-name {
+            font-size: 64px;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        .f3-status {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 36px;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        /* === FRAME 4: MESSAGE === */
+        .f4-bubble {
+            max-width: 90%;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50px 50px 50px 8px;
+            padding: 50px;
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        
+        .frame.active .f4-bubble {
+            animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        .f4-quote {
+            font-size: 48px;
+            font-weight: 500;
+            line-height: 1.4;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .f4-quote::before { content: '"'; color: var(--gold); }
+        .f4-quote::after { content: '"'; color: var(--gold); }
+        
+        .f4-author {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .f4-author-img {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid var(--gold);
+        }
+        
+        .f4-author-name {
+            font-weight: 700;
+            font-size: 28px;
+            color: var(--gold);
+        }
+        
+        .f4-author-time {
+            font-size: 20px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        /* === FRAME 5: CTA === */
+        .f5-logo {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 72px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--gold), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 50px;
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        
+        .frame.active .f5-logo {
+            animation: slideDown 0.5s ease forwards;
+        }
+        
+        .f5-hook {
+            font-size: 60px;
+            font-weight: 800;
+            color: white;
+            text-align: center;
+            line-height: 1.2;
+            margin-bottom: 60px;
+            padding: 0 40px;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .frame.active .f5-hook {
+            animation: slideUp 0.5s ease forwards 0.2s;
+        }
+        
+        .f5-btn {
+            background: white;
+            color: black;
+            font-size: 36px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 35px 80px;
+            border-radius: 100px;
+            box-shadow: 0 0 60px rgba(255,255,255,0.3);
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        
+        .frame.active .f5-btn {
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.4s;
+        }
+        
+        .f5-url {
+            margin-top: 40px;
+            font-size: 28px;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 2px;
+            opacity: 0;
+        }
+        
+        .frame.active .f5-url {
+            animation: fadeIn 0.5s ease forwards 0.6s;
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes stomp {
+            0% { transform: scale(3); opacity: 0; }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideDown {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes popIn {
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* === PARTICLES === */
+        .particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: var(--gold);
+            border-radius: 50%;
+            opacity: 0;
+        }
+        
+        @keyframes rise {
+            0% { transform: translateY(0) scale(1); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-300px) scale(0); opacity: 0; }
+        }
+
+        /* === SCANLINES === */
+        .scanlines {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0,0,0,0.1) 0px,
+                rgba(0,0,0,0.1) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            pointer-events: none;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+    <div class="particles" id="particles"></div>
+    <div class="scanlines"></div>
+
+    <!-- Hidden start button for automation -->
+    <button onclick="startTimeline()" style="position:absolute;opacity:0;z-index:9999;">START</button>
+
+    <!-- Frame 1: Hook -->
+    <div class="frame active" id="f1">
+        <div class="f1-container">
+            <div class="f1-alert">
+                <span>🔥</span>
+                <span>{{ badge_text }}</span>
+            </div>
+            <div class="f1-hook">{{ hook }}</div>
+            <div class="f1-value">R$ {{ amount }}</div>
+        </div>
+    </div>
+
+    <!-- Frame 2: Buildup -->
+    <div class="frame" id="f2">
+        <div class="f2-crown-container">
+            <div class="f2-ring f2-ring-1"></div>
+            <div class="f2-ring f2-ring-2"></div>
+            <div class="f2-ring f2-ring-3"></div>
+            <div class="f2-crown">👑</div>
+        </div>
+        <div class="f2-text">
+            QUEM SERÁ O<br>NOVO REI<span class="f2-dots">...</span>
+        </div>
+    </div>
+
+    <!-- Frame 3: Reveal -->
+    <div class="frame" id="f3">
+        <div class="f3-card">
+            <div class="f3-crown-badge">👑</div>
+            <div class="f3-label">Novo Rei do Trono</div>
+            <img src="{{ king_photo_url }}" class="f3-avatar" alt="Rei">
+            <div class="f3-name">{{ king_name }}</div>
+            <div class="f3-status">⚔️ Dominando Agora</div>
+        </div>
+    </div>
+
+    <!-- Frame 4: Message -->
+    <div class="frame" id="f4">
+        <div class="f4-bubble">
+            <div class="f4-quote">{{ message }}</div>
+            <div class="f4-author">
+                <img src="{{ king_photo_url }}" class="f4-author-img">
+                <div>
+                    <div class="f4-author-name">{{ king_name }}</div>
+                    <div class="f4-author-time">Agora mesmo</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frame 5: CTA -->
+    <div class="frame" id="f5">
+        <div class="f5-logo">THRONECLASH</div>
+        <div class="f5-hook">{{ cta }}</div>
+        <div class="f5-btn">ACEITE O DESAFIO</div>
+        <div class="f5-url">throneclash.com</div>
+    </div>
+
+    <script>
+        // Timeline: Total 15s
+        const TIMELINE = [
+            { id: 'f1', duration: 3000 },  // Hook (3s)
+            { id: 'f2', duration: 3000 },  // Buildup (3s)
+            { id: 'f3', duration: 4000 },  // Reveal (4s)
+            { id: 'f4', duration: 2500 },  // Message (2.5s)
+            { id: 'f5', duration: 2500 }   // CTA (2.5s)
+        ];
+
+        function startTimeline() {
+            let elapsed = 0;
+            TIMELINE.forEach(step => {
+                setTimeout(() => {
+                    document.querySelectorAll('.frame').forEach(f => f.classList.remove('active'));
+                    document.getElementById(step.id).classList.add('active');
+                }, elapsed);
+                elapsed += step.duration;
+            });
+        }
+
+        // Particles
+        function createParticle() {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 8 + 4;
+            p.style.width = size + 'px';
+            p.style.height = size + 'px';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.bottom = '0';
+            p.style.animation = `rise ${Math.random() * 3 + 3}s linear forwards`;
+            
+            const colors = ['var(--gold)', 'var(--cyan)', '#fff'];
+            p.style.background = colors[Math.floor(Math.random() * colors.length)];
+            
+            document.getElementById('particles').appendChild(p);
+            setTimeout(() => p.remove(), 6000);
+        }
+
+        setInterval(createParticle, 150);
+    </script>
+</body>
+</html>

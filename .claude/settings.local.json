@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(del \"E:\\Users\\Luiz\\Downloads\\video_creation_api\\video_api\\templates\\template_dynamic.html\")"
+    ]
+  }
+}
