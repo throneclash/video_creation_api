@@ -73,14 +73,14 @@ async def render_video(
             }
         """, timeout=10000)
 
-        # Aguarda conteúdo estar visível (evita frames em branco no início)
-        await page.wait_for_selector('.frame.active', state='visible', timeout=5000)
+        # Aguarda conteúdo estar visível (instant-visible ou active)
+        await page.wait_for_selector('.frame.instant-visible, .frame.active', state='visible', timeout=5000)
 
         # Aguarda fontes carregarem
         await page.wait_for_function("document.fonts.ready.then(() => true)", timeout=5000)
 
-        # Pequeno delay para garantir que tudo renderizou
-        await page.wait_for_timeout(100)
+        # Aguarda um pouco mais para garantir que o primeiro frame está completamente renderizado
+        await page.wait_for_timeout(300)
 
         # Grava a duração completa
         await page.wait_for_timeout(duration)
@@ -109,7 +109,7 @@ async def render_video(
 
     cmd = [
         ffmpeg_exe, "-y",
-        "-ss", "0.05",          # Corte mínimo do início (conteúdo já carregado)
+        "-ss", "0.3",           # Corte do início para remover possíveis frames brancos/pretos
         "-r", "60",             # Força 60 FPS de entrada
         "-i", raw_video_path,
     ]

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR" style="background:#000;">
+<html lang="pt-BR" style="background:#050505;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1080, height=1920">
-    <title>ThroneClash Elite v2</title>
+    <title>ThroneClash Elite v3</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,9 +15,12 @@
             --bg-dark: #050505;
         }
 
+        html, body {
+            background: var(--bg-dark) !important;
+        }
+
         body {
             width: 1080px; height: 1920px;
-            background: var(--bg-dark);
             font-family: 'Inter', sans-serif;
             overflow: hidden;
             position: relative;
@@ -32,13 +35,37 @@
             opacity: 0.2; pointer-events: none; z-index: 5;
         }
 
+        /* Partículas flutuantes */
+        .particles {
+            position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden;
+        }
+        .particle {
+            position: absolute; width: 6px; height: 6px; background: var(--accent);
+            border-radius: 50%; opacity: 0.6; filter: blur(1px);
+            animation: particleFloat 8s infinite ease-in-out;
+        }
+        .particle:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 25%; top: 60%; animation-delay: 1s; animation-duration: 10s; }
+        .particle:nth-child(3) { left: 45%; top: 30%; animation-delay: 2s; animation-duration: 7s; }
+        .particle:nth-child(4) { left: 65%; top: 70%; animation-delay: 0.5s; animation-duration: 9s; }
+        .particle:nth-child(5) { left: 80%; top: 40%; animation-delay: 1.5s; animation-duration: 11s; }
+        .particle:nth-child(6) { left: 90%; top: 80%; animation-delay: 3s; animation-duration: 6s; }
+        .particle:nth-child(7) { left: 15%; top: 85%; animation-delay: 2.5s; animation-duration: 8s; }
+        .particle:nth-child(8) { left: 55%; top: 15%; animation-delay: 4s; animation-duration: 12s; }
+        @keyframes particleFloat {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+            25% { transform: translateY(-100px) scale(1.5); opacity: 0.3; }
+            50% { transform: translateY(-200px) scale(0.8); opacity: 0.8; }
+            75% { transform: translateY(-100px) scale(1.2); opacity: 0.4; }
+        }
+
         .bg-grid {
             position: absolute; inset: -50%; width: 200%; height: 200%;
             background-image: linear-gradient(var(--accent) 1px, transparent 1px), linear-gradient(90deg, var(--accent) 1px, transparent 1px);
             background-size: 100px 100px;
             transform: perspective(1000px) rotateX(65deg);
-            animation: gridMove 20s linear infinite;
-            opacity: 0.1; z-index: 2;
+            animation: gridMove 15s linear infinite;
+            opacity: 0.15; z-index: 2;
         }
         @keyframes gridMove { to { background-position: 0 200px; } }
 
@@ -47,11 +74,18 @@
             position: absolute; inset: 0;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             opacity: 0; visibility: hidden; z-index: 10; padding: 80px;
-            transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-            transform: scale(1.1);
-            filter: blur(10px);
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            transform: scale(1.05) translateY(30px);
+            filter: blur(8px);
         }
-        .frame.active { opacity: 1; visibility: visible; transform: scale(1); filter: blur(0); }
+        .frame.active {
+            opacity: 1; visibility: visible; transform: scale(1) translateY(0); filter: blur(0);
+        }
+        /* Primeiro frame já visível instantaneamente para evitar flash branco/preto */
+        .frame.instant-visible {
+            opacity: 1; visibility: visible; transform: scale(1) translateY(0); filter: blur(0);
+            transition: none;
+        }
 
         .glass-panel {
             background: var(--glass);
@@ -62,9 +96,9 @@
             padding: 60px;
             box-shadow: 0 40px 100px rgba(0,0,0,0.6);
             width: 100%;
-            animation: floatPanel 6s ease-in-out infinite;
+            animation: floatPanel 4s ease-in-out infinite;
         }
-        @keyframes floatPanel { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes floatPanel { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
 
         /* Elementos F1 */
         .f1-badge {
@@ -73,65 +107,174 @@
             font-size: 38px; font-weight: 900; letter-spacing: 8px;
             box-shadow: 0 0 80px var(--accent);
             margin-bottom: 70px; text-transform: uppercase;
+            animation: badgePulse 2s ease-in-out infinite, slideDown 0.8s ease-out;
         }
+        @keyframes badgePulse {
+            0%, 100% { box-shadow: 0 0 80px var(--accent); transform: scale(1); }
+            50% { box-shadow: 0 0 120px var(--accent), 0 0 200px var(--accent); transform: scale(1.02); }
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+
+        .avatar-container {
+            position: relative; margin-bottom: 50px;
+            animation: avatarEntry 1s ease-out 0.3s both;
+        }
+        @keyframes avatarEntry { from { opacity: 0; transform: scale(0.5) rotate(-10deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+
         .avatar-main {
             width: 450px; height: 450px;
             border-radius: 50%; border: 15px solid var(--accent);
             box-shadow: 0 0 120px rgba(188, 19, 254, 0.4);
             object-fit: cover;
+            animation: avatarGlow 3s ease-in-out infinite;
         }
+        @keyframes avatarGlow {
+            0%, 100% { box-shadow: 0 0 80px rgba(188, 19, 254, 0.4), inset 0 0 30px rgba(188, 19, 254, 0.1); }
+            50% { box-shadow: 0 0 150px rgba(188, 19, 254, 0.6), 0 0 250px rgba(188, 19, 254, 0.3), inset 0 0 50px rgba(188, 19, 254, 0.2); }
+        }
+
+        /* Anel girando ao redor do avatar */
+        .avatar-ring {
+            position: absolute; top: -30px; left: -30px; right: -30px; bottom: -30px;
+            border: 3px solid transparent; border-top-color: var(--gold); border-bottom-color: var(--accent);
+            border-radius: 50%;
+            animation: ringRotate 4s linear infinite;
+        }
+        @keyframes ringRotate { to { transform: rotate(360deg); } }
+
         .crown-svg {
             position: absolute; top: -120px; left: 50%;
             transform: translateX(-50%) rotate(-5deg);
             width: 200px; filter: drop-shadow(0 0 40px var(--gold));
-            animation: crownFloat 4s infinite ease-in-out;
+            animation: crownFloat 3s infinite ease-in-out, crownShine 2s infinite;
         }
         @keyframes crownFloat { 0%, 100% { transform: translateX(-50%) rotate(-5deg) scale(1); } 50% { transform: translateX(-50%) rotate(5deg) scale(1.1); } }
+        @keyframes crownShine { 0%, 100% { filter: drop-shadow(0 0 40px var(--gold)); } 50% { filter: drop-shadow(0 0 80px var(--gold)) brightness(1.3); } }
+
+        .king-name {
+            font-family:'Rajdhani'; font-size: 100px; font-weight: 800; text-transform: uppercase;
+            animation: nameEntry 0.8s ease-out 0.5s both, textGlow 2s ease-in-out infinite 1s;
+        }
+        @keyframes nameEntry { from { opacity: 0; transform: translateX(-100px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes textGlow { 0%, 100% { text-shadow: none; } 50% { text-shadow: 0 0 30px var(--accent); } }
 
         .counter-val {
             font-family: 'Rajdhani'; font-size: 180px; font-weight: 900;
             text-shadow: 0 0 50px var(--accent); margin: 40px 0;
+            animation: counterPulse 0.5s ease-out infinite;
         }
+        @keyframes counterPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
 
         /* Mini Cards (F2/F3) */
-        .mini-card { display: flex; align-items: center; gap: 45px; }
-        .mini-photo { width: 200px; height: 200px; border-radius: 50%; border: 8px solid #333; object-fit: cover; }
+        .mini-card {
+            display: flex; align-items: center; gap: 45px;
+            animation: cardSlideIn 0.6s ease-out both;
+        }
+        @keyframes cardSlideIn { from { opacity: 0; transform: translateX(-80px); } to { opacity: 1; transform: translateX(0); } }
+
+        .mini-photo {
+            width: 200px; height: 200px; border-radius: 50%; border: 8px solid #333; object-fit: cover;
+            animation: photoZoom 0.5s ease-out both;
+        }
+        @keyframes photoZoom { from { transform: scale(0); } to { transform: scale(1); } }
+
         .rank-tag { font-size: 100px; font-weight: 900; font-family: 'Rajdhani'; opacity: 0.3; }
 
+        /* Seta animada */
+        .power-arrow {
+            font-size: 140px; margin: 40px 0; color: var(--accent);
+            animation: arrowBounce 1s ease-in-out infinite;
+        }
+        @keyframes arrowBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(20px); } }
+
+        /* Skull animado */
+        .skull-icon {
+            width: 320px; height: 320px; fill: #ff0044;
+            filter: drop-shadow(0 0 40px #ff0044); margin-bottom: 50px;
+            animation: skullShake 0.5s ease-in-out infinite, skullGlow 1.5s ease-in-out infinite;
+        }
+        @keyframes skullShake { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+        @keyframes skullGlow { 0%, 100% { filter: drop-shadow(0 0 40px #ff0044); } 50% { filter: drop-shadow(0 0 80px #ff0044) drop-shadow(0 0 120px #ff0044); } }
+
         /* CTA */
-        .cta-glitch { font-family: 'Rajdhani'; font-size: 160px; font-weight: 900; text-align: center; margin-bottom: 90px; }
+        .cta-glitch {
+            font-family: 'Rajdhani'; font-size: 140px; font-weight: 900; text-align: center; margin-bottom: 90px;
+            animation: glitchText 3s infinite, ctaEntry 0.8s ease-out both;
+            position: relative;
+        }
+        @keyframes ctaEntry { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        @keyframes glitchText {
+            0%, 90%, 100% { transform: translate(0); filter: none; }
+            92% { transform: translate(-5px, 2px); filter: hue-rotate(90deg); }
+            94% { transform: translate(5px, -2px); filter: hue-rotate(-90deg); }
+            96% { transform: translate(-3px, 0); }
+            98% { transform: translate(3px, 0); }
+        }
+
         .cta-button {
-            background: #fff; color: #000; padding: 60px 120px;
+            background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+            color: #000; padding: 60px 120px;
             border-radius: 120px; font-size: 58px; font-weight: 900;
             box-shadow: 0 0 100px rgba(255,255,255,0.3);
             text-transform: uppercase; letter-spacing: 4px;
+            animation: buttonPulse 2s ease-in-out infinite, buttonEntry 0.6s ease-out 0.3s both;
+            position: relative; overflow: hidden;
         }
+        @keyframes buttonEntry { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes buttonPulse {
+            0%, 100% { box-shadow: 0 0 60px rgba(255,255,255,0.3); transform: scale(1); }
+            50% { box-shadow: 0 0 120px rgba(255,255,255,0.5), 0 0 200px rgba(255,255,255,0.2); transform: scale(1.03); }
+        }
+        .cta-button::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg); animation: buttonShine 3s infinite;
+        }
+        @keyframes buttonShine { 0% { transform: translateX(-100%) rotate(45deg); } 100% { transform: translateX(100%) rotate(45deg); } }
 
-        .brand-footer { margin-top: 120px; font-size: 42px; color: rgba(255,255,255,0.4); letter-spacing: 10px; font-weight: 800; }
-        
+        .brand-footer {
+            margin-top: 120px; font-size: 42px; color: rgba(255,255,255,0.4); letter-spacing: 10px; font-weight: 800;
+            animation: fadeInUp 0.5s ease-out 0.6s both;
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
         .hidden { display: none !important; }
-        .skull-icon { width: 320px; height: 320px; fill: #ff0044; filter: drop-shadow(0 0 40px #ff0044); margin-bottom: 50px; }
+
+        /* Efeito de scan line para dar visual mais cinematográfico */
+        .scanlines {
+            position: fixed; inset: 0; z-index: 100; pointer-events: none;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+        }
     </style>
 </head>
 <body id="mainBody">
 
+    <!-- Efeitos de fundo -->
     <div class="bg-grid" id="grid"></div>
+    <div class="particles">
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+    </div>
+    <div class="scanlines"></div>
 
-    <div class="frame" id="f1">
+    <!-- Frame 1: Rei Principal - INSTANT-VISIBLE para evitar flash branco -->
+    <div class="frame instant-visible" id="f1">
         <div class="f1-badge" id="eventBadge">---</div>
-        <div style="position:relative; margin-bottom: 50px;">
+        <div class="avatar-container">
+            <div class="avatar-ring"></div>
             <svg class="crown-svg" viewBox="0 0 512 512">
                 <path fill="var(--gold)" d="M512 96l-64 128-192-160-192 160-64-128V416h512V96zM448 352H64V224l48 96 144-120 144 120 48-96v128z"/>
             </svg>
             <img src="{{ king_photo_url }}" class="avatar-main" id="img_king">
         </div>
-        <h2 style="font-family:'Rajdhani'; font-size: 100px; font-weight: 800; text-transform: uppercase;">{{ king_name }}</h2>
+        <h2 class="king-name">{{ king_name }}</h2>
         <div class="counter-val" id="moneyCounter">{{ labels.currency_symbol }} 0</div>
         <div class="glass-panel {{ 'hidden' if not message else '' }}" style="text-align:center;">
             <p style="font-size:45px; font-style:italic; line-height: 1.4;" id="kingQuote">---</p>
         </div>
     </div>
 
+    <!-- Frame 2: Queda de Poder (Destronado) -->
     <div class="frame {{ 'hidden' if not dethroned_name else '' }}" id="f2">
         <h2 id="shiftTitle" style="font-size: 45px; letter-spacing: 15px; color: #888; margin-bottom: 80px; text-transform: uppercase;">QUEDA DE PODER</h2>
         <div class="glass-panel mini-card" style="opacity:0.3; filter: grayscale(1);">
@@ -139,7 +282,7 @@
             <img src="{{ dethroned_photo_url }}" class="mini-photo" id="img_dethroned">
             <div><h3 style="font-size:60px;">{{ dethroned_name }}</h3><p id="labelOld" style="font-weight:700;">---</p></div>
         </div>
-        <div style="font-size:140px; margin:40px 0; color:var(--accent);">↓</div>
+        <div class="power-arrow">↓</div>
         <div class="glass-panel mini-card" style="border-color: var(--gold);">
             <div class="rank-tag" style="color:var(--gold); opacity:1;">#2</div>
             <img src="{{ dethroned_photo_url }}" class="mini-photo" style="border-color: var(--gold);">
@@ -147,6 +290,7 @@
         </div>
     </div>
 
+    <!-- Frame 3: Eliminados -->
     <div class="frame {{ 'hidden' if not victims else '' }}" id="f3">
         <svg class="skull-icon" viewBox="0 0 24 24">
             <path d="M12,2A9,9 0 0,0 3,11C3,14.03 4.53,16.71 6.88,18.33L5.5,21H18.5L17.12,18.33C19.47,16.71 21,14.03 21,11A9,9 0 0,0 12,2M12,4A7,7 0 0,1 19,11C19,13.22 17.96,15.2 16.32,16.5L15.42,17.22L16.31,18.94L16.85,20H7.15L7.69,18.94L8.58,17.22L7.68,16.5C6.04,15.2 5,13.22 5,11A7,7 0 0,1 12,4M9,9A1,1 0 0,0 8,10A1,1 0 0,0 9,11A1,1 0 0,0 10,10A1,1 0 0,0 9,9M15,9A1,1 0 0,0 14,10A1,1 0 0,0 15,11A1,1 0 0,0 16,10A1,1 0 0,0 15,9Z" />
@@ -161,6 +305,7 @@
         </div>
     </div>
 
+    <!-- Frame 4: CTA Final -->
     <div class="frame" id="f4">
         <div class="cta-glitch" id="ctaHook" data-text="---">---</div>
         <div class="cta-button" id="ctaBtn">---</div>
@@ -223,40 +368,78 @@
 
         function start() {
             const lang = TRANSLATIONS[CONFIG.region] || TRANSLATIONS.GLOBAL;
-            
+
             // Randomização de Cores e Textos
             const accent = lang.colors[Math.floor(Math.random() * lang.colors.length)];
             document.documentElement.style.setProperty('--accent', accent);
-            
+
             document.getElementById('eventBadge').textContent = lang.events[Math.floor(Math.random() * lang.events.length)];
             document.getElementById('kingQuote').textContent = CONFIG.msg_raw ? truncateMessage(CONFIG.msg_raw) : lang.quotes[Math.floor(Math.random() * lang.quotes.length)];
-            
+
             document.getElementById('shiftTitle').textContent = lang.shiftTitle;
             document.getElementById('labelOld').textContent = lang.labelOld;
             document.getElementById('labelNew').textContent = lang.labelNew;
             document.getElementById('elimMessage').textContent = lang.elimMessage;
             document.getElementById('elimBadge').textContent = lang.elimBadge;
-            
+
             const hook = lang.hooks[Math.floor(Math.random() * lang.hooks.length)];
             document.getElementById('ctaHook').textContent = hook;
             document.getElementById('ctaHook').setAttribute('data-text', hook);
             document.getElementById('ctaBtn').textContent = lang.btns[Math.floor(Math.random() * lang.btns.length)];
 
-            // Timeline (Garante 15s+ total)
-            const timeline = [
-                { id: 'f1', time: 5500 }, // Frame 1: 5.5s
-                { id: 'f2', time: 4000, condition: CONFIG.has_dethroned }, // Frame 2: 4s
-                { id: 'f3', time: 4000, condition: CONFIG.has_victims },    // Frame 3: 4s
-                { id: 'f4', time: 5000 }  // Frame 4: 5s
-            ];
+            // Inicia contador imediatamente (f1 já está visível via instant-visible)
+            animateCounter();
+
+            // Após pequeno delay, remove instant-visible e adiciona active para transições normais
+            setTimeout(() => {
+                const f1 = document.getElementById('f1');
+                f1.classList.remove('instant-visible');
+                f1.classList.add('active');
+            }, 100);
+
+            // Timeline para 12 segundos total
+            // Se só f1+f4: 7s + 5s = 12s
+            // Se f1+f2+f4: 5s + 3s + 4s = 12s
+            // Se f1+f3+f4: 5s + 3s + 4s = 12s
+            // Se f1+f2+f3+f4: 4s + 3s + 3s + 2s = 12s
+            const hasF2 = CONFIG.has_dethroned;
+            const hasF3 = CONFIG.has_victims;
+            const activeFrames = 2 + (hasF2 ? 1 : 0) + (hasF3 ? 1 : 0);
+
+            let timeline;
+            if (activeFrames === 2) {
+                // Só f1 e f4
+                timeline = [
+                    { id: 'f1', time: 7000 },
+                    { id: 'f4', time: 5000 }
+                ];
+            } else if (activeFrames === 3) {
+                // f1 + (f2 ou f3) + f4
+                timeline = [
+                    { id: 'f1', time: 5000 },
+                    { id: 'f2', time: 3500, condition: hasF2 },
+                    { id: 'f3', time: 3500, condition: hasF3 },
+                    { id: 'f4', time: 3500 }
+                ];
+            } else {
+                // Todos os 4 frames
+                timeline = [
+                    { id: 'f1', time: 4000 },
+                    { id: 'f2', time: 3000, condition: hasF2 },
+                    { id: 'f3', time: 3000, condition: hasF3 },
+                    { id: 'f4', time: 2000 }
+                ];
+            }
 
             let delay = 0;
             timeline.forEach(step => {
                 if (step.condition === false) return;
                 setTimeout(() => {
-                    document.querySelectorAll('.frame').forEach(f => f.classList.remove('active'));
+                    document.querySelectorAll('.frame').forEach(f => {
+                        f.classList.remove('active');
+                        f.classList.remove('instant-visible');
+                    });
                     document.getElementById(step.id).classList.add('active');
-                    if (step.id === 'f1') animateCounter();
                 }, delay);
                 delay += step.time;
             });

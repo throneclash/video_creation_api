@@ -3,6 +3,7 @@ Main FastAPI application for video creation and Instagram publishing.
 """
 
 import os
+import json
 import logging
 import uuid
 import requests
@@ -14,6 +15,44 @@ from fastapi.middleware.cors import CORSMiddleware
 from pyngrok import ngrok
 
 from app.config import settings
+
+# Diretório de logs
+LOGS_DIR = os.path.join(os.path.dirname(__file__), "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+
+def save_request_log(method: str, path: str, body: str, status_code: int = None):
+    """Salva cada request recebido em arquivo na pasta logs."""
+    try:
+        timestamp = datetime.now()
+        date_str = timestamp.strftime("%Y-%m-%d")
+        time_str = timestamp.strftime("%H-%M-%S-%f")[:-3]  # Até milissegundos
+
+        # Nome do arquivo: request_YYYY-MM-DD_HH-MM-SS-mmm.json
+        filename = f"request_{date_str}_{time_str}.json"
+        filepath = os.path.join(LOGS_DIR, filename)
+
+        # Tenta parsear o body como JSON
+        try:
+            body_json = json.loads(body) if body else None
+        except json.JSONDecodeError:
+            body_json = body
+
+        log_data = {
+            "timestamp": timestamp.isoformat(),
+            "method": method,
+            "path": path,
+            "status_code": status_code,
+            "body": body_json
+        }
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(log_data, f, indent=2, ensure_ascii=False, default=str)
+
+        return filepath
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Erro ao salvar log de request: {e}")
+        return None
 from app.models import (
     TemplateDynamicParams,
     VideoCreationRequest,
@@ -52,12 +91,24 @@ async def log_requests(request: Request, call_next):
     """Middleware para capturar TODOS os payloads recebidos (inclusive erros 422)"""
     # Captura o corpo da requisição
     body = await request.body()
+    body_str = body.decode('utf-8', errors='replace') if body else ""
 
     # Log apenas para rotas de API (evita poluir com /docs, /health, etc)
-    if "/api/" in request.url.path and body:
-        logger.info(f"[PAYLOAD] {request.method} {request.url.path} - Body: {body.decode('utf-8', errors='replace')}")
+    if "/api/" in request.url.path:
+        logger.info(f"[PAYLOAD] {request.method} {request.url.path} - Body: {body_str}")
 
     response = await call_next(request)
+
+    # Salva TODOS os requests de API em arquivo (com status code)
+    if "/api/" in request.url.path:
+        log_file = save_request_log(
+            method=request.method,
+            path=str(request.url.path),
+            body=body_str,
+            status_code=response.status_code
+        )
+        if log_file:
+            logger.info(f"[LOG SAVED] {log_file}")
 
     # Log se houve erro de validação (422)
     if response.status_code == 422:

@@ -120,10 +120,9 @@ class VideoProcessor:
             template = self.template_env.get_template("template_dynamic_new.html")
             html_content = template.render(**context)
 
-            # Duração Dinâmica: f1=5.5s + frames condicionais + f4=4s
-            duration = 10000  # f1 (5.5s) + f4 (4s) + margem
-            if context.get("dethroned_name"): duration += 3500  # f2: Ex-Rei
-            if context.get("victims"): duration += 3500         # f3: Eliminados
+            # Duração fixa de 12 segundos + margem para trim e segurança
+            # Template agora calcula automaticamente a timeline baseado nos frames ativos
+            duration = 13500  # 12s de conteúdo + 1s margem + 0.5s para trim inicial
 
             logger.info(f"Renderizando [{region}] {duration}ms -> {output_path}")
 
