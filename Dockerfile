@@ -2,9 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies for Playwright
+# Install system dependencies for Playwright and ngrok
 RUN apt-get update && apt-get install -y \
     curl \
+    gnupg \
     # Playwright dependencies
     libnss3 \
     libnspr4 \
@@ -34,6 +35,12 @@ RUN apt-get update && apt-get install -y \
     xvfb \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
+
+# Install ngrok
+RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && \
+    echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | tee /etc/apt/sources.list.d/ngrok.list && \
+    apt-get update && apt-get install ngrok -y && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .

@@ -45,7 +45,9 @@ async def render_video(
     abs_html_url = f"file:///{os.path.abspath(temp_html_path).replace(os.sep, '/')}"
     
     logger.info(f"🎥 Renderizando visual...")
-    
+    logger.info(f"🎵 Áudio selecionado: {audio_path}")
+    logger.info(f"🎵 Áudio existe: {os.path.exists(audio_path) if audio_path else 'N/A'}")
+
     async with async_playwright() as p:
         # 'color_scheme': 'dark' ajuda a evitar o flash branco inicial
         browser = await p.chromium.launch(headless=True)
@@ -61,13 +63,24 @@ async def render_video(
         # Garante fundo preto antes de carregar
         await page.add_style_tag(content="html, body { background-color: #000 !important; }")
 
-        await page.goto(abs_html_url, wait_until="load")
+        await page.goto(abs_html_url, wait_until="networkidle")
+
+        # Aguarda imagem principal carregar completamente
+        await page.wait_for_function("""
+            () => {
+                const img = document.querySelector('.avatar-main');
+                return img && img.complete && img.naturalWidth > 0;
+            }
+        """, timeout=10000)
 
         # Aguarda conteúdo estar visível (evita frames em branco no início)
         await page.wait_for_selector('.frame.active', state='visible', timeout=5000)
 
-        # Pequeno delay para garantir que animações CSS iniciaram
-        await page.wait_for_timeout(50)
+        # Aguarda fontes carregarem
+        await page.wait_for_function("document.fonts.ready.then(() => true)", timeout=5000)
+
+        # Pequeno delay para garantir que tudo renderizou
+        await page.wait_for_timeout(100)
 
         # Grava a duração completa
         await page.wait_for_timeout(duration)
@@ -120,8 +133,11 @@ async def render_video(
     ])
     
     try:
-        # Roda o comando silenciosamente
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Log do comando para debug
+        logger.info(f"🔧 FFmpeg comando: {' '.join(cmd)}")
+
+        # Roda o comando e captura erros
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         logger.info(f"✅ Vídeo final pronto: {output_path}")
         
         # Limpa arquivos temporários
@@ -130,6 +146,7 @@ async def render_video(
         
     except subprocess.CalledProcessError as e:
         logger.error(f"Erro no FFmpeg: {e}")
+        logger.error(f"FFmpeg stderr: {e.stderr if hasattr(e, 'stderr') else 'N/A'}")
         # Se falhar, entrega o vídeo cru
         if os.path.exists(raw_video_path):
             os.rename(raw_video_path, output_path)

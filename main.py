@@ -2,13 +2,16 @@
 Main FastAPI application for video creation and Instagram publishing.
 """
 
+import os
 import logging
 import uuid
+import requests
 from datetime import datetime
 from typing import Optional
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from pyngrok import ngrok
 
 from app.config import settings
 from app.models import (
@@ -54,6 +57,41 @@ async def startup_event():
     logger.info(f"Starting {settings.API_TITLE} v{settings.API_VERSION}")
     if not settings.validate():
         logger.warning("Environment variables missing. Instagram publishing may fail.")
+
+    # Iniciar túnel ngrok
+    ngrok_auth_token = os.getenv("NGROK_AUTH_TOKEN")
+    if ngrok_auth_token:
+        try:
+            ngrok.set_auth_token(ngrok_auth_token)
+            public_url = ngrok.connect(8000).public_url
+            logger.info(f"Túnel ngrok criado: {public_url}")
+
+            # Enviar URL para o Supabase
+            supabase_url = os.getenv("SUPABASE_FUNCTION_URL")
+            supabase_key = os.getenv("SUPABASE_API_KEY")
+
+            if supabase_url and supabase_key:
+                headers = {
+                    "Authorization": f"Bearer {supabase_key}",
+                    "apikey": supabase_key,
+                    "Content-Type": "application/json"
+                }
+                payload = {
+                    "name": "Functions",
+                    "url": public_url
+                }
+
+                try:
+                    res = requests.post(supabase_url, json=payload, headers=headers)
+                    logger.info(f"URL enviada ao Supabase: {res.status_code}")
+                except Exception as e:
+                    logger.error(f"Erro ao enviar URL para Supabase: {e}")
+            else:
+                logger.warning("SUPABASE_FUNCTION_URL ou SUPABASE_API_KEY não configurados")
+        except Exception as e:
+            logger.error(f"Erro ao criar túnel ngrok: {e}")
+    else:
+        logger.info("NGROK_AUTH_TOKEN não configurado - túnel não será criado")
 
 @app.get("/health", response_model=HealthCheckResponse, tags=["Health"])
 async def health_check():

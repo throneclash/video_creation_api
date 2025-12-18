@@ -76,7 +76,12 @@ class VideoProcessor:
 
     def _get_random_music(self) -> Optional[str]:
         mp3_files = glob.glob(os.path.join(self.assets_dir, "*.mp3"))
-        if mp3_files: return random.choice(mp3_files)
+        logger.info(f"🔍 Diretório de assets: {self.assets_dir}")
+        logger.info(f"🎵 Arquivos MP3 encontrados: {len(mp3_files)}")
+        if mp3_files:
+            selected = random.choice(mp3_files)
+            logger.info(f"🎵 Música selecionada: {selected}")
+            return selected
         
         # Fallback
         backup_url = "https://cdn.pixabay.com/download/audio/2022/03/15/audio_14578d6b8e.mp3?filename=cinematic.mp3"
