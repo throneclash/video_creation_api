@@ -174,7 +174,7 @@
             currency: "{{ labels.currency_symbol | default('R$') }}",
             has_dethroned: {{ 'true' if dethroned_name else 'false' }},
             has_victims: {{ 'true' if victims else 'false' }},
-            msg_raw: "{{ message | default('') }}"
+            msg_raw: {{ (message | default('')) | tojson }}
         };
 
         const TRANSLATIONS = {

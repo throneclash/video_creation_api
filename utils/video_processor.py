@@ -141,6 +141,13 @@ class VideoProcessor:
             logger.error(f"Erro Fatal: {e}", exc_info=True)
             status = "failed"
             error = str(e)
+            # Salva payload para debug em caso de erro de renderização
+            save_payload_log(
+                payload=params,
+                video_id=video_id,
+                error_message=f"Erro de renderização: {error}",
+                logs_dir=os.path.join(self.output_dir, "..", "logs")
+            )
             # Deleta arquivo em caso de erro
             delete_video_file(output_path)
 
