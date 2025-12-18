@@ -207,11 +207,11 @@
         // 2. Garantir carregamento de imagens antes de iniciar
         function preloadImages(urls, callback) {
             let loaded = 0;
-            const target = urls.filter(u => u && !u.includes('{{')).length;
+            const target = urls.filter(u => u && !u.includes('{{ "{{" }}')).length;
             if (target === 0) return callback();
             
             urls.forEach(url => {
-                if (!url || url.includes('{{')) return;
+                if (!url || url.includes('{{ "{{" }}')) return;
                 const img = new Image();
                 img.onload = img.onerror = () => {
                     loaded++;
