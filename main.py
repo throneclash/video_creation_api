@@ -9,7 +9,7 @@ import requests
 from datetime import datetime
 from typing import Optional
 
-from fastapi import FastAPI, BackgroundTasks, HTTPException, status
+from fastapi import FastAPI, BackgroundTasks, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pyngrok import ngrok
 
@@ -46,6 +46,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Middleware para capturar TODOS os payloads recebidos (inclusive erros 422)"""
+    # Captura o corpo da requisição
+    body = await request.body()
+
+    # Log apenas para rotas de API (evita poluir com /docs, /health, etc)
+    if "/api/" in request.url.path and body:
+        logger.info(f"[PAYLOAD] {request.method} {request.url.path} - Body: {body.decode('utf-8', errors='replace')}")
+
+    response = await call_next(request)
+
+    # Log se houve erro de validação (422)
+    if response.status_code == 422:
+        logger.warning(f"[VALIDATION ERROR 422] {request.method} {request.url.path}")
+
+    return response
 
 # Initialize processor
 video_processor = VideoProcessor(output_dir=settings.VIDEO_OUTPUT_DIR)
@@ -206,6 +224,9 @@ async def create_video_template_dynamic(params: TemplateDynamicParams, backgroun
     - persist_file: Se True, mantém o arquivo após processamento (padrão: False)
     - publish_instagram: Se True, publica no Instagram (padrão: True)
     """
+    # Log imediato do payload validado (útil para debug)
+    logger.info(f"[VALIDATED] template-dynamic payload: {params.model_dump_json()}")
+
     request = VideoCreationRequest(template="DYNAMIC", params=params.model_dump())
     return await create_video(request, background_tasks)
 
